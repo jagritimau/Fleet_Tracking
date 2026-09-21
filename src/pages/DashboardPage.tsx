@@ -7,6 +7,8 @@ import {
 import { supabase } from '../lib/supabase';
 import type { Vehicle, Shipment, DeliveryEvent, Driver } from '../types';
 import { vehicleStatusConfig, shipmentStatusConfig, formatTimeAgo } from '../lib/utils';
+import { useUIStore } from '../hooks/useUIStore';
+import { Map } from 'lucide-react';
 
 function Sparkline({ data, color, height = 40 }: { data: number[]; color: string; height?: number }) {
   const ref = useRef<HTMLCanvasElement>(null);
@@ -53,6 +55,7 @@ export function DashboardPage() {
   const [events, setEvents] = useState<DeliveryEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [lastRefresh, setLastRefresh] = useState(new Date());
+  const { setPage } = useUIStore();
 
   const load = useCallback(async () => {
     const [v, s, d, e] = await Promise.all([
@@ -176,10 +179,16 @@ export function DashboardPage() {
           </span>
           <span className="text-xs text-slate-500 font-medium">Live · Updated {formatTimeAgo(lastRefresh.toISOString())}</span>
         </div>
-        <button onClick={load} className="btn btn-sm btn-secondary gap-1.5">
-          <RefreshCw className="w-3 h-3" />
-          Refresh
-        </button>
+        <div className="flex items-center gap-2">
+          <button onClick={() => setPage('live-map')} className="btn btn-sm btn-primary gap-1.5">
+            <Map className="w-3 h-3" />
+            Live Map
+          </button>
+          <button onClick={load} className="btn btn-sm btn-secondary gap-1.5">
+            <RefreshCw className="w-3 h-3" />
+            Refresh
+          </button>
+        </div>
       </div>
 
       {/* KPI Cards */}
@@ -225,7 +234,11 @@ export function DashboardPage() {
             {vehicles.map((v) => {
               const cfg = vehicleStatusConfig[v.status];
               return (
-                <div key={v.id} className="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 transition-colors group cursor-pointer">
+                <button
+                  key={v.id}
+                  onClick={() => setPage('live-map')}
+                  className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 transition-colors group cursor-pointer text-left"
+                >
                   <div className={`relative w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 ${v.status === 'en_route' ? 'bg-accent-100' : v.status === 'maintenance' ? 'bg-warning-100' : v.status === 'offline' ? 'bg-slate-100' : 'bg-primary-50'}`}>
                     <Truck className={`w-4 h-4 ${v.status === 'en_route' ? 'text-accent-600' : v.status === 'maintenance' ? 'text-warning-600' : 'text-slate-500'}`} />
                     {v.status === 'en_route' && (
@@ -247,7 +260,8 @@ export function DashboardPage() {
                     <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`} />
                     {cfg.label}
                   </span>
-                </div>
+                  <Map className="w-4 h-4 text-slate-300 group-hover:text-primary-500 transition-colors flex-shrink-0" />
+                </button>
               );
             })}
           </div>
